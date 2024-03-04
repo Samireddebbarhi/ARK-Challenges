@@ -1,62 +1,91 @@
-const blogs = require("../blogs.json");
-const Blog = require("../Models/postModules");
-const service = require("../Services/Adding");
-const { body, validationResult } = require("express-validator");
-// Get all blogs
-const getBlogs = async (req, res, next) => {
-  const err = new Error("No Blog Found");
+const Blog = require("../Models/blogs");
+
+const getBlog = async (req, res, next) => {
   try {
-    const data = await Blog.getAllBlog();
-    res.status(200).send({ message: "Success", data: data });
-    console.log("Getting all the blogs...");
-  } catch (err) {
-    next(err);
+    const blogFound = await Blog.find({ userId: req.id })
+      .then((data) => {
+        res.status(200).json({
+          "your blog is ": data,
+        });
+        console.log("Getting a blogs from  your profile ...");
+      })
+      .catch((err) =>
+        res.status(404).json({ message: "No blog found on this profile !" })
+      );
+  } catch (error) {
+    next(error);
   }
 };
 
-const getBlog = (req, res, next) => {
+const createBlog = (req, res, next) => {
   try {
-    const blogId = parseInt(req.params.id);
-    const blogFound = blogs.find((blog) => blog.id === blogId);
-    if (!blogFound) {
-      const error = new Error(`Blog with id ${blogId} not found.`);
-      error.httpStatusCode = 404;
-      throw error;
+    const blog = req.body;
+    const newBlog = new Blog({
+      userId: req.id,
+      title: blog.title,
+      content: blog.content,
+    });
+    newBlog.save().then((data) => {
+      res.status(201).send(`Adding Blog : ${data}`);
+      console.log("Created a new Blog!");
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateBlog = async (req, res) => {
+  try {
+    if (!req.body.content || !req.body.title) {
+      res.status(400).send("Missing fields");
+    } else {
+      await Blog.updateOne(
+        { _id: req.params.id, userId: req.id },
+        {
+          $set: {
+            title: req.body.title,
+            content: req.body.content,
+          },
+        }
+      ).then((updatedBlog) => {
+        res.status(200).send(updatedBlog);
+        console.log("Updated Blog");
+      });
     }
-
-    res.status(200).send(blogFound);
-    console.log("Getting a specific blog by ID :" + blogId);
-  } catch (error) {
-    next(error);
+  } catch {
+    res.status(204).send("No content");
   }
 };
 
-const createBlog = async (req, res, next) => {
+const deleteBlog = async (req, res) => {
   try {
-    const body = req.body;
-    const data = await Blog.getAllBlog();
-    const newData = await service.addNewObj(body, data, "blogs");
-    res.status(201).send(newData);
-  } catch (error) {
-    next(error);
+    const result = await Blog.deleteOne({ _id: req.params.id, userId: req.id });
+    if (!result) {
+      return res
+        .status(401)
+        .json({ msg: "You are not authorized to perform this action" });
+    }
+    res.status(200).json({ msg: "Deleted blog successfully!" });
+  } catch {
+    res.status(500).json({ msg: "Server error" });
   }
 };
 
-/*const body = req.body;
-  console.log(body);
-  const id = blogs.length + 1;
-  const newBlog = { id, ...body };
-
-  if (!body) {
-    const err = new Error();
-    res.status(err.statusCode || 500).send({ message: "Invalid Body" });
-    next(err);
-  } else {
-    blogs.push(newBlog);
-    res.status(201).send(newBlog);
+const deletedAllBlog = async (req, res) => {
+  try {
+    await Blog.deleteMany({ userId: req.id }).then(() =>
+      res
+        .status(200)
+        .json({ msg: "all Blogs from your profile are deleted succefully" })
+    );
+  } catch {
+    res.status(500).send("failed!!");
   }
-
-  console.log("Creating a new blog...");
 };
-*/
-module.exports = { getBlogs, getBlog, createBlog };
+module.exports = {
+  deletedAllBlog,
+  deleteBlog,
+  updateBlog,
+  getBlog,
+  createBlog,
+};

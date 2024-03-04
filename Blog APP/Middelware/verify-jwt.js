@@ -1,17 +1,15 @@
-require("dotenv").config();
 const jwt = require("jsonwebtoken");
+require("dotenv").config();
 
-const verifyToken = (req, res, next) => {
-  const AuthHeaders = req.headers.authorization || req.headers.Authorization;
-  if (!AuthHeaders?.startsWith("Bearer")) return res.sendStatus(401);
-
-  const Token = AuthHeaders.split(" ")[1];
-  jwt.verify(Token, process.env.Token_Secret, (err, user) => {
-    if (err) return res.status(403).send("InvalidToken");
+const verifyJWT = (req, res, next) => {
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+  if (!authHeader?.startsWith("Bearer ")) return res.sendStatus(401);
+  const token = authHeader.split(" ")[1];
+  jwt.verify(token, process.env.Token_Secret, (err, user) => {
+    if (err) return res.sendStatus(403); //invalid token
     req.id = user.id;
-    req.username = user.username;
     next();
   });
 };
 
-module.exports = verifyToken;
+module.exports = verifyJWT;

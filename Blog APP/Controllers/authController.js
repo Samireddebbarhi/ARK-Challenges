@@ -1,28 +1,36 @@
 const jwt = require("jsonwebtoken");
-const user = require("../Models/users");
-
+const users = require("../Models/users.js");
+const bcrypt = require("bcrypt");
 require("dotenv").config();
+exports.HandleLogin = async (req, res) => {
+  const user = req.body;
+  if (!user)
+    return res
+      .status(400)
+      .send({ error: "You must provide username and password" });
 
-exports.HandleLogin = (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password)
-    return res.status(400).send({ msg: "Missing credentials" });
-
-  const FoundUser = user.find(
-    (user) => user.username === username && user.password === password
-  );
-
-  if (FoundUser) {
-    const Newtoken = jwt.sign(
-      { user: { id: FoundUser.id, username: FoundUser.username } },
-      process.env.Token_Secret,
-      {
-        expiresIn: "10m",
-      }
-    );
-    res.cookie("jwt", Newtoken);
-    res.json(Newtoken);
-  } else {
-    return res.status(400).send({ error: "user Doesn't exist" });
-  }
+  users.find({ username: user.username }).then(async (data) => {
+    try {
+      const match = await bcrypt.compare(user.password, data[0].password);
+      if (match) {
+        const Newtoken = jwt.sign(
+          { id: data[0]._id },
+          process.env.Token_Secret,
+          {
+            expiresIn: "10m",
+          }
+        );
+        res
+          .status(200)
+          .send(
+            `HI ${user.username} you connected succefully  with token : ${Newtoken}`
+          );
+      } else
+        res.status(401).send({
+          error: `Sorry  this ${user.username} or Password are incorrect `,
+        });
+    } catch (err) {
+      console.log(err);
+    }
+  });
 };
