@@ -1,0 +1,16 @@
+/* index.css */
+* {
+  box-sizing: border-box;
+}
+#root {
+  min-height: calc(100vh - 34px);
+}
+:root {
+  --body-font: Arial, Helvetica, sans-serif;
+}
+
+body {
+  margin: 0;
+  font-family: "Lato", sans-serif;
+}
+/* Add more global styles as needed */
