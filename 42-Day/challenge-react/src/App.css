@@ -1,0 +1,15 @@
+.text {
+  margin: 20px;
+
+  font-size: medium;
+}
+
+div .p1 h1 {
+  text-transform: uppercase;
+  font-weight: bolder;
+}
+
+div .p7 {
+  font-weight: 5px;
+  font-style: inherit;
+}
